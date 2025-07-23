@@ -1,0 +1,154 @@
+function doPost(e) {
+  try {
+    // Log completo para debug
+    console.log("=== INÍCIO DA EXECUÇÃO ===");
+    console.log("Parâmetro e:", e);
+    console.log("Tipo de e:", typeof e);
+    
+    if (e) {
+      console.log("e.postData:", e.postData);
+      console.log("e.parameter:", e.parameter);
+      console.log("e.parameters:", e.parameters);
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Leads");
+    
+    if (!sheet) {
+      throw new Error("Planilha 'Leads' não encontrada");
+    }
+
+    let data = {};
+
+    // Múltiplas formas de capturar os dados
+    if (e && e.postData && e.postData.contents) {
+      try {
+        console.log("Tentando parse do postData.contents:", e.postData.contents);
+        data = JSON.parse(e.postData.contents);
+        console.log("Dados do JSON:", data);
+      } catch (parseError) {
+        console.error("Erro no parse JSON:", parseError);
+        return createErrorResponse("Erro ao processar JSON: " + parseError.toString());
+      }
+    } else if (e && e.parameter) {
+      console.log("Usando e.parameter:", e.parameter);
+      data = e.parameter;
+    } else if (e && e.parameters) {
+      console.log("Usando e.parameters:", e.parameters);
+      for (let key in e.parameters) {
+        data[key] = e.parameters[key][0];
+      }
+    } else {
+      console.error("Nenhuma fonte de dados encontrada");
+      return createErrorResponse("Nenhum dado recebido. Verifique a configuração do Web App.");
+    }
+
+    console.log("Dados finais processados:", data);
+
+    // Validação
+    const camposObrigatorios = ["nome", "email", "telefone"];
+    const camposFaltando = [];
+    
+    for (let campo of camposObrigatorios) {
+      if (!data[campo] || String(data[campo]).trim() === '') {
+        camposFaltando.push(campo);
+      }
+    }
+
+    if (camposFaltando.length > 0) {
+      return createErrorResponse(`Campos obrigatórios faltando: ${camposFaltando.join(', ')}`);
+    }
+
+    // Inserir na planilha
+    const dataHora = new Date();
+    const novaLinha = [
+      dataHora.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+      String(data.nome).trim(),
+      String(data.email).trim(),
+      String(data.telefone).trim(),
+      data.interesse || "Não informado",
+      data.informacoes || "Nenhuma informação adicional"
+    ];
+
+    sheet.appendRow(novaLinha);
+    console.log("Linha inserida na planilha:", novaLinha);
+
+    // Enviar email
+    try {
+      const assunto = "Novo Lead - Nine Office Boutique";
+      const mensagem = `
+Novo lead recebido:
+
+Nome: ${data.nome}
+Email: ${data.email}
+Telefone: ${data.telefone}
+Interesse: ${data.interesse || "Não informado"}
+Informações: ${data.informacoes || "Nenhuma"}
+Data/Hora: ${dataHora.toLocaleString('pt-BR')}
+      `.trim();
+
+      GmailApp.sendEmail(
+        "guilhermemorientes@gmail.com, forteprado@hotmail.com",
+        assunto,
+        mensagem,
+        { replyTo: String(data.email) }
+      );
+      console.log("Email enviado com sucesso");
+    } catch (emailError) {
+      console.error("Erro no email:", emailError);
+    }
+
+    return createSuccessResponse("Lead registrado com sucesso!");
+
+  } catch (err) {
+    console.error("ERRO GERAL:", err);
+    console.error("Stack:", err.stack);
+    return createErrorResponse("Erro interno: " + err.toString());
+  }
+}
+
+function createSuccessResponse(message) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ 
+      success: true,
+      message: message
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function createErrorResponse(error) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ 
+      success: false,
+      error: error
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Função para testar
+function testarManualmente() {
+  const dadosTeste = {
+    postData: {
+      contents: JSON.stringify({
+        nome: "João Silva",
+        email: "joao@teste.com",
+        telefone: "(11) 99999-9999",
+        interesse: "comprar",
+        informacoes: "Interessado no empreendimento"
+      })
+    }
+  };
+  
+  console.log("=== TESTE MANUAL ===");
+  const resultado = doPost(dadosTeste);
+  console.log("Resultado:", resultado.getContent());
+}
+
+// Função doGet para lidar com requisições GET (CORS preflight)
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ 
+      success: true,
+      message: "API funcionando" 
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
