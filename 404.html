@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página não encontrada - Munck Jundiaí</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-content h1 {
+            font-size: 4rem;
+            color: var(--accent-orange);
+            margin-bottom: 1rem;
+        }
+        .error-content h2 {
+            font-size: 1.5rem;
+            color: var(--primary-gray-700);
+            margin-bottom: 1rem;
+        }
+        .error-content p {
+            color: var(--primary-gray-500);
+            margin-bottom: 2rem;
+        }
+        .btn-home {
+            background: var(--accent-orange);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: var(--radius);
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .btn-home:hover {
+            background: var(--accent-orange-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-content">
+            <h1>404</h1>
+            <h2>Página não encontrada</h2>
+            <p>A página que você está procurando não existe ou foi movida.</p>
+            <a href="/" class="btn-home">Voltar ao Início</a>
+        </div>
+    </div>
+</body>
+</html>
